@@ -3,6 +3,8 @@ import morgan from "morgan";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import userRouter from "./user/user.routes.js";
+import cors from "cors"
 
 dotenv.config();
 
@@ -13,6 +15,10 @@ mongoose.connect(process.env.DB_URL)
 
 app.use(cookieParser())
 
+// cors
+app.use(cors({
+  origin:  process.env.DOMAIN
+}))
 // middleware
 app.use(morgan("dev"));
 
@@ -30,8 +36,10 @@ app.post("/test", (req, res) => {
   res.send(req.body);
 });
 
-import userRouter from "./user/user.routes.js";
+
 app.use("/api/user", userRouter);
+
+
 
 app.listen(3030, () => {
   console.log("Server is running on port 3030");
