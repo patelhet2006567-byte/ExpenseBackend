@@ -1,7 +1,7 @@
 
 
 export const otpTemplate = (otp) => {
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -31,8 +31,8 @@ export const otpTemplate = (otp) => {
                 Use the following OTP to complete your verification. This code is valid for <strong>5 minutes</strong>.
               </p>
 
-              <div style="font-size:32px; letter-spacing:8px; margin:25px 0; color:#007bff; font-weight:bold;">
-                {{${otp}}}
+             <div style="font-size:32px; letter-spacing:8px; margin:25px 0; color:#007bff; font-weight:bold;">
+              ${otp}
               </div>
 
               <p style="font-size:14px; color:#888;">

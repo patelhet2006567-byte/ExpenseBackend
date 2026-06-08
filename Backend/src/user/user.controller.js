@@ -15,21 +15,50 @@ export const createUser = async (req,res)=>{
     }
 }
 
+// export const sendEmail = async (req,res)=>{
+//     try{
+//         const {email} = req.body;
+//         const OTP = generateOTP()
+//         await sendMail(email,"OTP For Signup",otpTemplate(OTP));
+//         res.json({
+//             message : "Email sent successfully",
+//             otp : OTP,
+//             success : true
+//         });
+//     }catch(err){
+//         res.status(500).json({message : err.message});
+//     }
+// }
 export const sendEmail = async (req,res)=>{
     try{
         const {email} = req.body;
-        const OTP = generateOTP()
-        await sendMail(email,"OTP For Signup",otpTemplate(OTP));
+
+        console.log("Email =", email);
+
+        const OTP = generateOTP();
+        const isEmail = await UserModel.findOne({email});
+        if(isEmail)
+            return res.status(400).json({message:"Already registered !"})
+        await sendMail(
+            email,
+            "OTP For Signup",
+            otpTemplate(OTP)
+        );
+
         res.json({
             message : "Email sent successfully",
             otp : OTP,
             success : true
         });
+
     }catch(err){
-        res.status(500).json({message : err.message});
+        console.log("SEND EMAIL ERROR =", err);
+
+        res.status(500).json({
+            message : err.message
+        });
     }
 }
-
 
 const createToken = async (user)=>{
     const payload = {
@@ -59,7 +88,7 @@ export const login = async (req,res)=>{
             secure : process.env.ENVIRONMENT === "DEV" ? false : true,
             httpOnly : true 
         });
-        res.json({message: "Login Success"})
+        res.json({message: "Login Success" , role:user.role})
         
     }catch(err){
         res.status(500).json({message : err.message});

@@ -4,11 +4,13 @@ import { Link } from "react-router-dom";
 import Homelayout from "../../../layout/Homelayout";
 import axios from "axios";
 import { useState } from "react";
+import { toast } from "react-toastify";
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
 
-const { Item } = Form
+const { Item } = Form 
 
 const Signup = () => {
+    const [signupForm] = Form.useForm();
     const [formData, setformData] = useState(null);
     const [otp, setOtp] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -18,7 +20,9 @@ const Signup = () => {
             const { data } = await axios.post("/api/user/send-mail", values)
             setOtp(data.otp);
             setformData(values)
-        } catch (error) {
+            signupForm.resetFields();  
+        } catch (err) {
+            toast.error(err.response ? err.response.data.message : err.message)
             setOtp(null);
             setformData(null);
 
@@ -29,14 +33,15 @@ const Signup = () => {
     const onSignup = async (values) => {
         try {
             if(Number(values.otp)!==Number(otp))
-                return alert("OTP not match")
-            // setLoading(true)
-            // const { data } = await axios.post("/api/user/send-mail", values)
-            // setOtp(data.otp);
-            // setformData(values)
-        } catch (error) {
+                return toast.error("OTP not match")
+            setLoading(true)
+            await axios.post("/api/user/signup", formData)
+            toast.success("Signup success");
             setOtp(null);
             setformData(null);
+        } catch (error) {
+            
+            toast.error(err.response ? err.response.data.message : err.message)
 
         } finally {
             setLoading(false);
@@ -56,7 +61,7 @@ const Signup = () => {
                         {
                             otp ?
                                 <Form
-                                    name="login-form"
+                                    name="otp-form"
                                     layout="vertical"
                                     onFinish={onSignup}
                                 >
@@ -84,9 +89,10 @@ const Signup = () => {
                                 </Form>
                                 :
                                 <Form
-                                    name="login-form"
+                                    name="signup-form"
                                     layout="vertical"
                                     onFinish={onFinish}
+                                    form={signupForm}
                                 >
                                     <Item
                                         name="fullname"

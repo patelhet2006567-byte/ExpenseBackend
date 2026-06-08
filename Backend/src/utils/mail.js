@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 export const sendMail = async (email,subject,template) => {
     try{
         const config = nodemailer.createTransport({
-            service : "gamil",
+            service : "gmail",
             auth : {
                 user : process.env.SENDER_EMAIL,
                 pass : process.env.SENDER_PASSWORD
@@ -19,6 +19,8 @@ export const sendMail = async (email,subject,template) => {
         await config.sendMail(options);
         return true
     }catch(err){
-        return false;
-    }
+    console.log("Mail Error:", err);
+    throw err;
+}
+console.log("mail.js loaded");
 }

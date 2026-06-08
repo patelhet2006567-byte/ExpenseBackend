@@ -7,6 +7,8 @@ import userRouter from "./user/user.routes.js";
 import cors from "cors"
 
 dotenv.config();
+console.log("EMAIL =", process.env.SENDER_EMAIL);
+console.log("PASSWORD =", process.env.SENDER_PASSWORD);
 
 const app = express();
 mongoose.connect(process.env.DB_URL)
