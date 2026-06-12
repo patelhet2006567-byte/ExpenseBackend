@@ -116,7 +116,7 @@ const Signup = () => {
                                     </Item>
                                     <Item
                                         name="email"
-                                        label="Username"
+                                        label="Email"
                                         rules={[{ required: true }]}
                                     >
                                         <Input

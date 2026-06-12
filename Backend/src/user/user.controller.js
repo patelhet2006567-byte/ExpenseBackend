@@ -4,14 +4,15 @@ import jwt from "jsonwebtoken";
 import { sendMail } from "../utils/mail.js";
 import { otpTemplate } from "../utils/otp.template.js";
 import { generateOTP } from "../utils/generate.otp.js";
-export const createUser = async (req,res)=>{
-    try{
+import { forgotPasswordTemplate } from "../utils/forgot-template.js";
+export const createUser = async (req, res) => {
+    try {
         const data = req.body;
         const user = new UserModel(data)
         await user.save();
         res.json(user);
-    }catch(err){
-        res.status(500).json({message : err.message});
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 }
 
@@ -29,16 +30,16 @@ export const createUser = async (req,res)=>{
 //         res.status(500).json({message : err.message});
 //     }
 // }
-export const sendEmail = async (req,res)=>{
-    try{
-        const {email} = req.body;
+export const sendEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
 
         console.log("Email =", email);
 
         const OTP = generateOTP();
-        const isEmail = await UserModel.findOne({email});
-        if(isEmail)
-            return res.status(400).json({message:"Already registered !"})
+        const isEmail = await UserModel.findOne({ email });
+        if (isEmail)
+            return res.status(400).json({ message: "Already registered !" })
         await sendMail(
             email,
             "OTP For Signup",
@@ -46,51 +47,89 @@ export const sendEmail = async (req,res)=>{
         );
 
         res.json({
-            message : "Email sent successfully",
-            otp : OTP,
-            success : true
+            message: "Email sent successfully",
+            otp: OTP,
+            success: true
         });
 
-    }catch(err){
+    } catch (err) {
         console.log("SEND EMAIL ERROR =", err);
 
         res.status(500).json({
-            message : err.message
+            message: err.message
         });
     }
 }
 
-const createToken = async (user)=>{
+const createToken = async (user) => {
     const payload = {
-        id : user._id,
+        id: user._id,
         fullname: user.fullname,
-        email : user.email,
-        role : user.role
+        email: user.email,
+        role: user.role
     }
 
-    const token = await jwt.sign(payload,process.env.AUTH_SECRET,{expiresIn:"1d"})
+    const token = await jwt.sign(payload, process.env.AUTH_SECRET, { expiresIn: "1d" })
     return token;
 }
-export const login = async (req,res)=>{
-    try{
-        const {email,password} = req.body;
-        const user = await UserModel .findOne({email})
-        if(!user)
-            return res.status(404).json({message:"User  not found !"})
-        const isLoged = await bcrypt.compare(password,user.password);
-        if(!isLoged)
-            return res.status(401).json({message:"Incorrect password !"})
+export const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await UserModel.findOne({ email })
+        if (!user)
+            return res.status(404).json({ message: "User  not found !" })
+        const isLoged = await bcrypt.compare(password, user.password);
+        if (!isLoged)
+            return res.status(401).json({ message: "Incorrect password !" })
 
-        const token =await createToken(user);
-        res.cookie("authToken",token,{
-            maxAge : 86400000,
-            domain : process.env.ENVIRONMENT === "DEV" ? "localhost" : process.env.DOMAIN,
-            secure : process.env.ENVIRONMENT === "DEV" ? false : true,
-            httpOnly : true 
+        const token = await createToken(user);
+        res.cookie("authToken", token, {
+            maxAge: 86400000,
+            domain: process.env.ENVIRONMENT === "DEV" ? "localhost" : process.env.DOMAIN,
+            secure: process.env.ENVIRONMENT === "DEV" ? false : true,
+            httpOnly: true
         });
-        res.json({message: "Login Success" , role:user.role})
-        
-    }catch(err){
-        res.status(500).json({message : err.message});
+        res.json({ message: "Login Success", role: user.role })
+
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await UserModel.findOne({ email })
+        if (!user)
+            return res.status(404).json({ message: 'User doesn`t exists' });
+
+        const token = await jwt.sign({ id: user._id }, process.env.FORGOT_TOKEN_SECRET, { expiresIn: "15m" })
+        const link = `${process.env.DOMAIN}/forgot-password?token=${token}`;
+        const sent = await sendMail(
+            email, "Expense - Forgot PAssword ? ",
+            forgotPasswordTemplate(user.fullname,link)
+        )
+        if(!sent)
+            return res.status(424).json({message : 'Email sending failed !'});
+        res.json({message : "Please check your email to forgot passswod."});
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
+export const verifyToken = async (req, res) => {
+    try {
+        res.json("Verification success")
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+export const changePassword = async (req, res) => {
+    try {
+        const {password} = req.body;
+        const encrypted = await bcrypt.hash(password.toString(),12)
+        await UserModel.findByIdAndUpdate(req.user.id,{password :encrypted});
+        res.json("Password updated successfully")
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 }

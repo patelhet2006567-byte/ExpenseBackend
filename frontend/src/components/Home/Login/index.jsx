@@ -15,6 +15,7 @@ const Login = () => {
     const navigate = useNavigate();
 
     const onFinish = async (values) => {
+         console.log("FORM VALUES =", values);
         try {
             setLoading(true)
             const { data } = await axios.post("/api/user/login", values);
@@ -81,7 +82,7 @@ const Login = () => {
                     </Form>
                     <div className="flex items-center justify-between">
                         <Link style={{ textDecoration: "underline" }}
-                            to="#"
+                            to="/forgot-password"
                             className="!text -[#FF735C] !font-bold"
                         >
                             Forgot Password
