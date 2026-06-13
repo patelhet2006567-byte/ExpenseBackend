@@ -3,10 +3,10 @@ import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Homelayout from "../../../layout/Homelayout";
-axios.defaults.baseURL = import.meta.env.VITE_BASE_URL
+import http from "../../../utils/http";
+
 
 const { Item } = Form
 
@@ -30,7 +30,7 @@ const ForgotPassword = () => {
 
     const checkToken = async (tok) => {
         try {
-            await axios.post("/api/user/verify-token", {}, {
+            await http.post("/api/user/verify-token", {}, {
                 headers: {
                     Authorization: `Bearer ${tok}`
                 }
@@ -46,7 +46,7 @@ const ForgotPassword = () => {
         try {
             setLoading(true);
 
-            const { data } = await axios.post(
+            const { data } = await http.post(
                 "/api/user/forgot-password",
                 values
             );
@@ -68,7 +68,7 @@ const ForgotPassword = () => {
             if(values.password !== values.rePassword)
                 return toast.warning("Password & re password not matched");
             setLoading(true)
-            await axios.put("/api/user/change-password", values,
+            await http.put("/api/user/change-password", values,
                 {
                     headers: {
                         Authorization: `Bearer ${params.get("token")}`

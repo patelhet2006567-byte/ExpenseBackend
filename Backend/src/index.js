@@ -19,7 +19,8 @@ app.use(cookieParser())
 
 // cors
 app.use(cors({
-  origin:  process.env.DOMAIN
+  origin:  process.env.DOMAIN,
+  credentials :true
 }))
 // middleware
 app.use(morgan("dev"));
