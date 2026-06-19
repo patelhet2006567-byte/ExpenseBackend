@@ -1,5 +1,5 @@
 import {Router} from "express"; 
-import { createUser, login , sendEmail , forgotPassword, verifyToken , changePassword} from "./user.controller.js";
+import { createUser, login , sendEmail , forgotPassword, verifyToken , changePassword, logout} from "./user.controller.js";
 import { AdminUserGuard, verifyTokenGuard } from "../middleware/guard.middleware.js";
 
 
@@ -7,8 +7,12 @@ const userRouter = Router();
 
 //@post../api/user/signup
 userRouter.post("/signup" , createUser);
+
 //@post../api/user/login
 userRouter.post("/login" , login);
+
+//@get../api/user/logout
+userRouter.get("/logout" , logout);
 
 //@post../api/user/sent-mail
 userRouter.post("/send-mail" , sendEmail);

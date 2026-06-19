@@ -85,11 +85,11 @@ export const login = async (req, res) => {
         const token = await createToken(user);
         res.cookie("authToken", token, {
             httpOnly: true,
-            secure : process.env.ENVIRONMENT !== "DEV",
-            sameSite : process.env.ENVIRONMENT === "DEV" ? "lax" : "none",
-            path : "/",
-            domain : undefined,
-            maxAge :86400000,
+            secure: process.env.ENVIRONMENT !== "DEV",
+            sameSite: process.env.ENVIRONMENT === "DEV" ? "lax" : "none",
+            path: "/",
+            domain: undefined,
+            maxAge: 86400000,
         });
         res.json({ message: "Login Success", role: user.role })
 
@@ -97,6 +97,29 @@ export const login = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 }
+
+export const logout = async (req, res) => {
+    try {
+        const invalid = async (res) => {
+            res.cookie('authToken', null, {
+                httpOnly: true,
+                secure: process.env.ENVIRONTMENT !== "DEV",
+                sameSite: process.env.ENVIRONTMENT === "DEV" ? "lax" : "none",
+                path: "/",
+                domain: undefined,
+                maxAge: 0,
+            }) 
+        }
+        res.status(200).json({
+            message: "Logout Success"
+        });
+    } catch (err) {
+        res.status(401).json({
+            message: err.message || "Logout Failed"
+        });
+    }
+}
+
 export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -108,11 +131,11 @@ export const forgotPassword = async (req, res) => {
         const link = `${process.env.DOMAIN}/forgot-password?token=${token}`;
         const sent = await sendMail(
             email, "Expense - Forgot PAssword ? ",
-            forgotPasswordTemplate(user.fullname,link)
+            forgotPasswordTemplate(user.fullname, link)
         )
-        if(!sent)
-            return res.status(424).json({message : 'Email sending failed !'});
-        res.json({message : "Please check your email to forgot passswod."});
+        if (!sent)
+            return res.status(424).json({ message: 'Email sending failed !' });
+        res.json({ message: "Please check your email to forgot passswod." });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -127,9 +150,9 @@ export const verifyToken = async (req, res) => {
 }
 export const changePassword = async (req, res) => {
     try {
-        const {password} = req.body;
-        const encrypted = await bcrypt.hash(password.toString(),12)
-        await UserModel.findByIdAndUpdate(req.user.id,{password :encrypted});
+        const { password } = req.body;
+        const encrypted = await bcrypt.hash(password.toString(), 12)
+        await UserModel.findByIdAndUpdate(req.user.id, { password: encrypted });
         res.json("Password updated successfully")
     } catch (err) {
         res.status(500).json({ message: err.message });

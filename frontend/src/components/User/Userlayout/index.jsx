@@ -1,9 +1,13 @@
 import { AppstoreAddOutlined, BarChartOutlined, LogoutOutlined, MenuOutlined } from "@ant-design/icons";
 import { Button, Image, Layout, Menu } from "antd";
 import { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import useSWR from "swr";
 import fetcher from "../../../utils/fetcher";
+import Loader from "../../Shared/Loader";
+
+import http from "../../../utils/http";
+import { toast } from "react-toastify";
 
 const { Sider, Header, Content, Footer } = Layout;
 const items = [
@@ -20,17 +24,25 @@ const items = [
 ]
 const Userlayout = () => {
     const navigate = useNavigate();
+    const {pathname} = useLocation();
     const [open, setOpen] = useState(false)
+    const [loading,setLoading] = useState(false)
     const handleNavigate = (menu) => {
         navigate(menu.key)
     }
+    const logout =async () => {
+        try{
+            setLoading(true)
+            await http.get("/api/user/logout");
+            navigate("/")
+            setLoading(false)
+        }catch(err){
+            setLoading(false)
+            toast.error(err.response ? err.response.data.message :err.message)
+        }
+    }
 
-    const {data:session,error,isLoading} = useSWR(
-        "/api/user/session",
-        fetcher
-    )
-    console.log(session,error,isLoading);
-    
+
     const siderStyle = {
         position: 'sticky',
         insetInlineStart: 0,
@@ -61,7 +73,7 @@ const Userlayout = () => {
                 />
             </div>
             <Menu
-                defaultSelectedKeys={['/app/user/dashboard']}
+                defaultSelectedKeys={[pathname]}
                 theme="dark"
                 items={items}
                 onClick={handleNavigate}
@@ -76,10 +88,12 @@ const Userlayout = () => {
                 />
                 <Button
                     icon={<LogoutOutlined />}
+                    onClick={logout}
+                    loading={loading}
                 />
             </Header>
             <Content>
-                <Outlet/>
+                <Outlet />
             </Content>
         </Layout>
     </Layout>
