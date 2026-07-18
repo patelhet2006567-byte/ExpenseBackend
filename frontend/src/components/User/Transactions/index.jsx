@@ -1,12 +1,17 @@
 import { DeleteOutlined, EditOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Card, Form, Input, Modal, Popconfirm, Select, Table } from "antd";
-import Item from "antd/es/list/Item";
+import { Alert, Button, Card, Form, Input, Modal, Popconfirm, Select, Table } from "antd";
+import useSWR, { mutate } from "swr"
 import { useState } from "react";
 import { toast } from "react-toastify";
+import http from "../../../utils/http"
+import fetcher from "../../../utils/fetcher";
+import { data } from "react-router-dom";
+import { formatCounter } from "antd/es/statistic/utils";
+import { formatDate } from "../../../utils/date";
 
 
 const Transactions = () => {
-    const [transactioForm] = Form.useForm();
+    const [transactionForm] = Form.useForm();
 
     const [edit, setEdit] = useState(null);
     const [modal, setModal] = useState(false);
@@ -46,6 +51,7 @@ const Transactions = () => {
             title: "Date",
             dataIndex: "createdAt",
             key: "createdAt",
+            render :(date) => formatDate(date)
         },
         {
 
@@ -58,6 +64,7 @@ const Transactions = () => {
                         title="Are you sure ?"
                         description="Once you update , you can also re-update ! "
                         onCancel={() => toast.info("No Changes occur")}
+                        onConfirm={()=>onEditTransaction(obj)}
                     >
                         <Button
                             type="text"
@@ -69,6 +76,7 @@ const Transactions = () => {
                         title="Are you sure ?"
                         description="Once you deleted , you can not re-store ! "
                         onCancel={() => toast.info("Your data is safe !")}
+                        onConfirm={()=>onDelete(obj._id)}
                     >
                         <Button
                             type="text"
@@ -80,6 +88,63 @@ const Transactions = () => {
             ),
         }
     ];
+
+    const {data:transactions,error,isLoading} = useSWR(
+        "/api/transaction/get",
+        fetcher
+
+    )
+
+    const onUpdate = async (values) => {
+        try {
+            setLoading(true);
+            await http.put(`/api/transaction/update/${edit._id}`, values);
+            toast.success("Transaction updated successfully !");
+            mutate("/api/transaction/get"); 
+            setModal(false);
+            setEdit(null)
+            transactionForm.resetFields();
+        } catch (err) {
+            toast.error(err.response?.data?.message || err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+     const onFinish = async (values) => {
+        try {
+            setLoading(true);
+            await http.post("/api/transaction/create", values);
+            toast.success("Transaction creadted successfully !");
+            mutate("/api/transaction/get"); 
+            setModal(false);
+            transactionForm.resetFields();
+        } catch (err) {
+            toast.error(err.response?.data?.message || err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const onDelete = async(id)=>{
+      
+        try {
+            setLoading(true);
+            await http.delete(`/api/transaction/delete/${id}`);
+            toast.success("Transaction deleted successfully !");
+            mutate("/api/transaction/get"); 
+        } catch (err) {
+            toast.error(err.response?.data?.message || err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const onEditTransaction = async(obj) => {
+        setEdit(obj);
+        transactionForm.setFieldsValue(obj);
+        setModal(true);
+    }
     return (
         <div>
             <div className="grid">
@@ -105,22 +170,27 @@ const Transactions = () => {
                 </Card>
                 <Table
                     columns={columns}
-                    dataSource={[{}, {}]}
+                    dataSource={transactions}
                     scroll={{ x: "max-contant " }}
+                    loading={isLoading}
                 />
             </div>
             <Modal
                 open={modal}
-                onCancel={() => setModal(false)}
+                onCancel={() => {
+                    setModal(false)
+                    setEdit(null)
+                }}
                 title="Add new transaction"
                 footer={null}
             >
                 <Form
                     layout="vertical"
-                    form={transactioForm}
+                    form={transactionForm}
+                    onFinish={edit ? onUpdate : onFinish}
                 >
                     <div className="grid md:grid-cols-2 gap-x-3">
-                        <Item
+                        <Form.Item
                             label="Transaction"
                             name="transactionType"
                             rules={[{ required: true }]}
@@ -133,22 +203,22 @@ const Transactions = () => {
                                 ]}
                             />
 
-                        </Item>
-                        <Item
+                        </Form.Item>
+                        <Form.Item
                             label="Amount"
                             name="amount"
                             rules={[{ required: true }]}
                         >
                             <Input placeholder="Enter Amount" type="number" />
-                        </Item>
-                        <Item
+                        </Form.Item>
+                        <Form.Item
                             label="Title"
                             name="title"
                             rules={[{ required: true }]}
                         >
                             <Input placeholder="Enter Title" />
-                        </Item>
-                        <Item
+                        </Form.Item>
+                        <Form.Item
                             label="Payment Method"
                             name="paymentMethod"
                             rules={[{ required: true }]}
@@ -161,26 +231,26 @@ const Transactions = () => {
                                 ]}
                             />
 
-                        </Item>
+                        </Form.Item>
                     </div>
-                    <Item
+                    <Form.Item
                         label="Notes"
                         name="notes"
                         rules={[{ required: true }]}
                     >
                         <Input.TextArea placeholder="potato , tomato , etc" />
-                    </Item>
-                    <Item 
-                    className="flex justify-end items-center"
+                    </Form.Item>
+                    <Form.Item
+                        className="flex justify-end items-center"
                     >
-                        <Button 
-                        loading={loading}
-                        type="text"
-                        htmlType="submit"
-                        className="!font-semibold !text-white !bg-blue-500">
-                            Submit
+                        <Button
+                            loading={loading}
+                            type="text"
+                            htmlType="submit"
+                            className={`!font-semibold !text-white ${edit ? "!bg-red-500" : "!bg-blue-500"}`}>
+                            {edit ? "Update" : "Submit"}
                         </Button>
-                    </Item>
+                    </Form.Item>
                 </Form>
             </Modal>
         </div>
