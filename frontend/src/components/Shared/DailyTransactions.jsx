@@ -31,17 +31,16 @@ const DailyTransactionChart = ({ transactions = [] }) => {
   });
 
   const last30Days = getLast30Days();
-  const chartData = last30Days.map((date) => ({
-    date,
-    total: dailyTotals[date] || 0,
-  }));
+  // const chartData = last30Days.map((date) => ({
+  //   date,
+  //   total: dailyTotals[date] || 0,
+  // }));
 
   return (
     <Card title="📆 Daily Transaction Summary (Last 30 Days)" className="rounded-2xl shadow-md">
       <div className="w-full h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
+          <LineChart data={transactions}>
             <XAxis dataKey="date" />
             <YAxis />
             <Tooltip />

@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import userRouter from "./user/user.routes.js";
 import cors from "cors"
 import TransactionRouter from "./transaction/transaction.route.js";
+import DashboardRouter from "./dashboard/dashboard.route.js"
 
 dotenv.config();
 console.log("EMAIL =", process.env.SENDER_EMAIL);
@@ -43,6 +44,7 @@ app.post("/test", (req, res) => {
 
 app.use("/api/user", userRouter);
 app.use("/api/transaction", TransactionRouter);
+app.use("/api/dashboard",DashboardRouter);
 
 
 
