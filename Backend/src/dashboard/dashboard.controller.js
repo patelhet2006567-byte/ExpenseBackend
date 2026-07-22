@@ -2,11 +2,17 @@ import TransactionModel from "../transaction/transaction.model.js";
 
 export const getReport = async (req, res) => {
     try {
-        const { id } = req.user;
+        const { id, role } = req.user;
+        let transactions = [];
+        if (role === "admin") {
+            transactions = await TransactionModel.find()
+                .lean();
+        } else {
+            transactions = await TransactionModel.find({
+                userId: id,
+            }).lean();
+        }
 
-        const transactions = await TransactionModel.find({
-            userId: id,
-        }).lean();
 
         let totalCredit = 0;
         let totalDebit = 0;
@@ -57,7 +63,7 @@ export const getReport = async (req, res) => {
                 balanceEstimate: estimate(balance)
 
             },
-            chart : last30Days
+            chart: last30Days
         });
     }
     catch (err) {
