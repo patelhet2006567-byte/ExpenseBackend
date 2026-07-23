@@ -8,6 +8,7 @@ import fetcher from "../../../utils/fetcher";
 import { data } from "react-router-dom";
 import { formatCounter } from "antd/es/statistic/utils";
 import { formatDate } from "../../../utils/date";
+import { useEffect } from "react";
 
 
 const Users = () => {
@@ -15,6 +16,13 @@ const Users = () => {
     const [edit, setEdit] = useState(null);
     const [modal, setModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [no, setNo] = useState(0);
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 5,
+        total: 0,
+    });
     const columns = [
         {
             title: "Role",
@@ -79,11 +87,33 @@ const Users = () => {
 
     ];
 
-    const { data: users, error, isLoading } = useSWR(
-        "/api/user/get",
-        fetcher
+    // const { data: users, error, isLoading } = useSWR(
+    //     "/api/user/get",
+    //     fetcher
 
-    )
+    // )
+    const fetchUsers = async (page = 1, pageSize = 5) => {
+        try {
+            setLoading(true)
+            const res = await http.get(`/api/user/get?page=${page} &limit=${pageSize}`);
+            const { data, total } = res.data;
+            setUsers(data);
+            setPagination({
+                current: page,
+                pageSize: pageSize,
+                total: total
+            })
+
+        } catch (err) {
+            toast.error("Failed to fetch transactions");
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchUsers(pagination.current, pagination.pageSize);
+    }, [no])
 
     const onStatus = async (obj) => {
 
@@ -91,12 +121,15 @@ const Users = () => {
             setLoading(true);
             await http.put(`/api/user/status/${obj._id}`, { status: !obj.status });
             toast.success("Status updated successfully !");
-            mutate("/api/user/get");
+            setNo(no+1);
         } catch (err) {
             toast.error(err.response?.data?.message || err.message)
         } finally {
             setLoading(false)
         }
+    }
+    const handleTableChange = (pagination) => {
+        fetchUsers(pagination.current, pagination.pageSize)
     }
 
     return (
@@ -119,7 +152,10 @@ const Users = () => {
                     columns={columns}
                     dataSource={users}
                     scroll={{ x: "max-contant " }}
-                    loading={isLoading}
+                    loading={loading}
+                    rowKey="_id"
+                    onChange={handleTableChange}
+                    pagination={pagination}
                 />
             </div>
 

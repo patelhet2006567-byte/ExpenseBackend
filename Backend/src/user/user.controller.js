@@ -5,6 +5,7 @@ import { sendMail } from "../utils/mail.js";
 import { otpTemplate } from "../utils/otp.template.js";
 import { generateOTP } from "../utils/generate.otp.js";
 import { forgotPasswordTemplate } from "../utils/forgot-template.js";
+import TransactionModel from "../transaction/transaction.model.js";
 export const createUser = async (req, res) => {
     try {
         const data = req.body;
@@ -164,9 +165,14 @@ export const changePassword = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
     try {
-
-        const users = await UserModel.find().sort({ createdAt: -1 });
-        res.json(users)
+        const { page, limit } = req.query;
+        const skip = (page - 1) * limit;
+        const users = await UserModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
+        const total = await UserModel.countDocuments()
+        res.json({
+            data: users,
+            total
+        });
     } catch (err) {
         res.status(500).json({
             message: err.message || "Internal server error."

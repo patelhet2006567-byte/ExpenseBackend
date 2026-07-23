@@ -8,6 +8,7 @@ import fetcher from "../../../utils/fetcher";
 import { data } from "react-router-dom";
 import { formatCounter } from "antd/es/statistic/utils";
 import { formatDate } from "../../../utils/date";
+import { useEffect } from "react";
 
 
 const Transactions = () => {
@@ -16,6 +17,14 @@ const Transactions = () => {
     const [edit, setEdit] = useState(null);
     const [modal, setModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [transactions, setTransactions] = useState([]);
+    const [no, setNo] = useState(0);
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 5,
+        total: 0,
+    });
+
     const columns = [
         {
             title: "Transaction Type",
@@ -51,7 +60,7 @@ const Transactions = () => {
             title: "Date",
             dataIndex: "createdAt",
             key: "createdAt",
-            render :(date) => formatDate(date)
+            render: (date) => formatDate(date)
         },
         {
 
@@ -64,7 +73,7 @@ const Transactions = () => {
                         title="Are you sure ?"
                         description="Once you update , you can also re-update ! "
                         onCancel={() => toast.info("No Changes occur")}
-                        onConfirm={()=>onEditTransaction(obj)}
+                        onConfirm={() => onEditTransaction(obj)}
                     >
                         <Button
                             type="text"
@@ -76,7 +85,7 @@ const Transactions = () => {
                         title="Are you sure ?"
                         description="Once you deleted , you can not re-store ! "
                         onCancel={() => toast.info("Your data is safe !")}
-                        onConfirm={()=>onDelete(obj._id)}
+                        onConfirm={() => onDelete(obj._id)}
                     >
                         <Button
                             type="text"
@@ -89,18 +98,40 @@ const Transactions = () => {
         }
     ];
 
-    const {data:transactions,error,isLoading} = useSWR(
-        "/api/transaction/get",
-        fetcher
+    // const {data:transactions,error,isLoading} = useSWR(
+    //     "/api/transaction/get",
+    //     fetcher
+    // )
 
-    )
+    const fetchTransaction = async (page = 1, pageSize = 5) => {
+        try {
+            setLoading(true)
+            const res = await http.get(`/api/transaction/get?page=${page} &limit=${pageSize}`);
+            const { data, total } = res.data;
+            setTransactions(data);
+            setPagination({
+                current: page,
+                pageSize: pageSize,
+                total: total
+            })
+
+        } catch (err) {
+            toast.error("Failed to fetch transactions");
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchTransaction(pagination.current, pagination.pageSize);
+    }, [no])
 
     const onUpdate = async (values) => {
         try {
             setLoading(true);
             await http.put(`/api/transaction/update/${edit._id}`, values);
             toast.success("Transaction updated successfully !");
-            mutate("/api/transaction/get"); 
+            setNo(no + 1);
             setModal(false);
             setEdit(null)
             transactionForm.resetFields();
@@ -111,12 +142,12 @@ const Transactions = () => {
         }
     }
 
-     const onFinish = async (values) => {
+    const onFinish = async (values) => {
         try {
             setLoading(true);
             await http.post("/api/transaction/create", values);
             toast.success("Transaction creadted successfully !");
-            mutate("/api/transaction/get"); 
+            setNo(no + 1);
             setModal(false);
             transactionForm.resetFields();
         } catch (err) {
@@ -126,13 +157,13 @@ const Transactions = () => {
         }
     }
 
-    const onDelete = async(id)=>{
-      
+    const onDelete = async (id) => {
+
         try {
             setLoading(true);
             await http.delete(`/api/transaction/delete/${id}`);
             toast.success("Transaction deleted successfully !");
-            mutate("/api/transaction/get"); 
+            setNo(no + 1);
         } catch (err) {
             toast.error(err.response?.data?.message || err.message)
         } finally {
@@ -140,10 +171,14 @@ const Transactions = () => {
         }
     }
 
-    const onEditTransaction = async(obj) => {
+    const onEditTransaction = async (obj) => {
         setEdit(obj);
         transactionForm.setFieldsValue(obj);
         setModal(true);
+    }
+
+    const handleTableChange = (pagination) => {
+        fetchTransaction(pagination.current, pagination.pageSize)
     }
     return (
         <div>
@@ -172,7 +207,10 @@ const Transactions = () => {
                     columns={columns}
                     dataSource={transactions}
                     scroll={{ x: "max-contant " }}
-                    loading={isLoading}
+                    loading={loading}
+                    rowKey="_id"
+                    pagination={pagination}
+                    onChange={handleTableChange}
                 />
             </div>
             <Modal
